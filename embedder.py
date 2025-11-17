@@ -1,24 +1,11 @@
-from sentence_transformers import SentenceTransformer
-from qdrant_client import QdrantClient
 from qdrant_client.http import models
 
-from conf import MODEL_NAME, QDRANT_URL, COLLECTION_NAME
+from conf import COLLECTION_NAME, client, model
 from web_Scrapper import get_chennai_news
 import traceback
 
 # Load model & client ONCE at module import
-try:
-    print("Loading embedding model...")
-    model = SentenceTransformer(MODEL_NAME)
-    print("Model loaded.")
 
-    print("Connecting to Qdrant...")
-    client = QdrantClient(url=QDRANT_URL, api_key=None)
-    print("Connected to Qdrant.")
-except Exception as e:
-    print("Initialization error:", e)
-    model = None
-    client = None
 
 
 def _get_existing_titles_and_max_id():

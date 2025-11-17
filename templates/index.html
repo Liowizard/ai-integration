@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI News Searcher</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        body {
+            font-family: "Inter", Arial, sans-serif;
+            margin: 0;
+            background: #f5f7fb;
+            color: #222;
+        }
+
+        header {
+            background: #111827;
+            padding: 20px;
+            text-align: center;
+            color: white;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: white;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-search {
+            background: #2563eb;
+            color: white;
+        }
+        .btn-search:hover {
+            background: #1e4fc5;
+        }
+
+        .btn-sync {
+            background: #10b981;
+            color: white;
+        }
+        .btn-sync:hover {
+            background: #0c8f68;
+        }
+
+        .result-card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 18px;
+            margin-top: 16px;
+            border-left: 5px solid #2563eb;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .result-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .result-score {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .loading {
+            margin-top: 10px;
+            font-size: 15px;
+            color: #2563eb;
+        }
+
+        .sync-status {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #10b981;
+        }
+
+        .error {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #ef4444;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    📰 AI News Searcher
+</header>
+
+<div class="container">
+
+    <!-- Search Form -->
+    <div class="input-row">
+        <input id="queryInput" type="text" placeholder="Search news (e.g. hospital wellness)">
+        <button class="btn-search" onclick="searchNews()">Search</button>
+        <button class="btn-sync" onclick="syncNews()">Sync</button>
+    </div>
+
+    <div id="status"></div>
+    <div id="results"></div>
+
+</div>
+
+<script>
+    async function searchNews() {
+        const query = document.getElementById("queryInput").value.trim();
+        const resultsDiv = document.getElementById("results");
+        const statusDiv = document.getElementById("status");
+
+        if (!query) {
+            statusDiv.innerHTML = `<div class='error'>Please enter a search term.</div>`;
+            return;
+        }
+
+        statusDiv.innerHTML = `<div class='loading'>Searching...</div>`;
+        resultsDiv.innerHTML = "";
+
+        try {
+            const res = await fetch(`/news-search?query=${encodeURIComponent(query)}`);
+            const data = await res.json();
+
+            if (data.status !== "success") {
+                statusDiv.innerHTML = `<div class='error'>${data.message}</div>`;
+                return;
+            }
+
+            statusDiv.innerHTML = `<div class='sync-status'>Found ${data.results_count} results</div>`;
+
+            data.results.forEach(item => {
+                resultsDiv.innerHTML += `
+                    <div class="result-card">
+                        <div class="result-title">${item.title}</div>
+                        <div class="result-score">Score: ${item.score.toFixed(4)}</div>
+                        <div>${item.news_snippet}</div>
+                    </div>
+                `;
+            });
+
+        } catch (err) {
+            statusDiv.innerHTML = `<div class='error'>Error: ${err}</div>`;
+        }
+    }
+
+    async function syncNews() {
+        const statusDiv = document.getElementById("status");
+        const resultsDiv = document.getElementById("results");
+
+        statusDiv.innerHTML = `<div class='loading'>Syncing news...</div>`;
+        resultsDiv.innerHTML = "";
+
+        try {
+            const res = await fetch(`/news-sync`);
+            const data = await res.json();
+
+            if (data.status !== "success") {
+                statusDiv.innerHTML = `<div class='error'>${data.message}</div>`;
+                return;
+            }
+
+            statusDiv.innerHTML =
+                `<div class='sync-status'>Sync completed. ${data.new_indexed ?? data.total_indexed} new articles added.</div>`;
+
+        } catch (err) {
+            statusDiv.innerHTML = `<div class='error'>Error: ${err}</div>`;
+        }
+    }
+</script>
+
+</body>
+</html>

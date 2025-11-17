@@ -1,22 +1,6 @@
 import traceback
 
-from qdrant_client import QdrantClient
-from sentence_transformers import SentenceTransformer
-
-from conf import MODEL_NAME, QDRANT_URL, COLLECTION_NAME
-
-try:
-    print("Loading embedding model for search...")
-    model = SentenceTransformer(MODEL_NAME)
-    print("Search model loaded.")
-
-    print("Connecting to Qdrant for search...")
-    client = QdrantClient(url=QDRANT_URL, api_key=None)
-    print("Search Qdrant client ready.")
-except Exception as e:
-    print("Search initialization error:", e)
-    model = None
-    client = None
+from conf import COLLECTION_NAME, model, client
 
 
 def search_news(query: str, top_k: int = 5):
@@ -38,7 +22,6 @@ def search_news(query: str, top_k: int = 5):
             }, 500
 
         query = query.strip()
-        print(f"\nSearching for: {query!r} (top_k={top_k})")
 
         # 1) Embed the query using the SAME model
         query_vector = model.encode([query])[0].tolist()
@@ -67,8 +50,6 @@ def search_news(query: str, top_k: int = 5):
                     "news_snippet": news.replace("\n", " ")[:300],
                 }
             )
-
-        print(f"Found {len(hits)} results.\n")
 
         return {
             "status": "success",
