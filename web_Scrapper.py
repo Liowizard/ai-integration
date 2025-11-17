@@ -53,7 +53,51 @@ def get_chennai_news():
 
     india_today_news = pd.DataFrame(IT)
 
+
+    # ---------------------------- news18 (with pagination) ----------------------------
+    news18_links = []
+
+    BASE_URL = "https://www.news18.com/cities/chennai-news/"
+
+    # Loop through page-1 to page-5
+    for page in range(1, 6):
+        if page == 1:
+            url = BASE_URL
+        else:
+            url = f"{BASE_URL}page-{page}/"
+
+
+        r = requests.get(url)
+        b = soup(r.content, "html.parser")
+
+        for i in b.find_all('li', {"class": "jsx-2985166500"}):
+            a_tag = i.find("a")
+            if a_tag and a_tag.get("href"):
+                news18_links.append(a_tag["href"])
+
+
+    # ---------------------------- Fetch full news ----------------------------
+    n18 = {"title": [], "news": []}
+
+    for url in news18_links:
+        full_url = "https://www.news18.com" + url
+
+        req = requests.get(full_url)
+        blog = soup(req.content, "html.parser")
+
+        # Title
+        h1 = blog.find("h1")
+        n18["title"].append(h1.text.strip() if h1 else "No Title Found")
+
+        # Body text
+        paragraphs = blog.find_all("p")
+        news_text = "\n".join([p.text.strip() for p in paragraphs if p.text.strip()])
+        n18["news"].append(news_text)
+
+    news18_news = pd.DataFrame(n18)
+
+
     # ---------------------------- MERGE BOTH ----------------------------
-    combined_news = pd.concat([hindu_news, india_today_news], ignore_index=True)
+    combined_news = pd.concat([hindu_news, india_today_news,news18_news], ignore_index=True)
 
     return combined_news
